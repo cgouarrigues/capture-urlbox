@@ -1,23 +1,27 @@
-(async () => {
-  const waitForIframes = async (tries = 20, delay = 300) => {
-    while (tries-- > 0) {
-      const iframes = [...document.querySelectorAll("iframe.vds-youtube")].filter(f => f.src?.includes("youtube"));
-      if (iframes.length) return iframes;
-      await new Promise(r => setTimeout(r, delay));
-    }
-    return [];
-  };
+(() => {
+      const waitForIframesWithSrc = async (retries = 20, delay = 300) => {
+        while (retries-- > 0) {
+          const iframes = [...document.querySelectorAll("iframe.vds-youtube")];
+          const ready = iframes.filter(iframe => iframe.getAttribute("src")?.includes("youtube"));
+          if (ready.length > 0) return ready;
+          await new Promise(res => setTimeout(res, delay));
+        }
+        return [];
+      };
 
-  const iframes = await waitForIframes();
-  iframes.forEach(f => {
-    const match = f.src.match(/embed\/([\w-]{11})/);
-    if (match) {
-      const img = document.createElement("img");
-      img.src = `https://img.youtube.com/vi/${match[1]}/maxresdefault.jpg`;
-      img.width = f.offsetWidth || 800;
-      img.height = f.offsetHeight || 450;
-      img.style.borderRadius = "12px";
-      f.replaceWith(img);
-    }
-  });
-})();
+      waitForIframesWithSrc().then(iframes => {
+        if (iframes.length === 0) return;
+        iframes.forEach((iframe) => {
+          const src = iframe.getAttribute("src") || "";
+          const match = src.match(/embed\\/([a-zA-Z0-9_-]{11})/);
+          if (!match) return;
+          const videoId = match[1];
+          const img = document.createElement("img");
+          img.src = \`https://img.youtube.com/vi/\${videoId}/maxresdefault.jpg\`;
+          img.width = iframe.offsetWidth || 800;
+          img.height = iframe.offsetHeight || 450;
+          img.style.borderRadius = "12px";
+          iframe.replaceWith(img);
+        });
+      });
+    })()
